@@ -1,0 +1,82 @@
+!pip install streamlit
+import streamlit as st
+import csv
+import datetime
+import os
+
+# Define the file where recharge records are stored
+ledger_file = 'mobile_recharge_ledger.csv'
+
+# Function to initialize the ledger file if it doesn't exist
+def initialize_ledger():
+    if not os.path.exists(ledger_file):
+        with open(ledger_file, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(['UserID', 'MobileNumber', 'RechargeAmount', 'Date'])
+
+# Function to add a recharge record
+def add_recharge_record(user_id, mobile_number, recharge_amount):
+    date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    with open(ledger_file, 'a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([user_id, mobile_number, recharge_amount, date])
+
+# Function to read all records
+def read_recharge_records():
+    records = []
+    if os.path.exists(ledger_file):
+        with open(ledger_file, 'r') as file:
+            reader = csv.reader(file)
+            next(reader, None)  # Skip header
+            for row in reader:
+                records.append(row)
+    return records
+
+# Function to search records by user_id
+def search_records_by_user(user_id):
+    results = []
+    records = read_recharge_records()
+    for row in records:
+        if row[0] == user_id:
+            results.append(row)
+    return results
+
+# Initialize ledger on first run
+initialize_ledger()
+
+# Streamlit UI
+st.title("📱 Mobile Recharge Ledger")
+
+menu = st.sidebar.radio("Menu", ["Add Recharge", "View All Records", "Search by User ID"])
+
+if menu == "Add Recharge":
+    st.header("Add a Recharge Record")
+    user_id = st.text_input("User ID")
+    mobile_number = st.text_input("Mobile Number")
+    recharge_amount = st.text_input("Recharge Amount")
+
+    if st.button("Add Record"):
+        if user_id and mobile_number and recharge_amount:
+            add_recharge_record(user_id, mobile_number, recharge_amount)
+            st.success("Recharge record added successfully!")
+        else:
+            st.warning("Please fill in all fields.")
+
+elif menu == "View All Records":
+    st.header("All Recharge Records")
+    records = read_recharge_records()
+    if records:
+        st.table([["UserID", "MobileNumber", "RechargeAmount", "Date"]] + records)
+    else:
+        st.info("No records found.")
+
+elif menu == "Search by User ID":
+    st.header("Search Records")
+    search_id = st.text_input("Enter User ID to search")
+
+    if st.button("Search"):
+        results = search_records_by_user(search_id)
+        if results:
+            st.table([["UserID", "MobileNumber", "RechargeAmount", "Date"]] + results)
+        else:
+            st.warning(f"No records found for User ID: {search_id}")
